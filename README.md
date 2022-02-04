@@ -28,5 +28,5 @@ As long as it's been added to your path, you can now run `TODO` (or case-insensi
 
 ## Configuration
 
-- If you don't use `nvim`, you'll want to set your EDITOR environment variable.
+- If you don't use `nvim`, you'll want to set your `TODO_EDITOR` environment variable. I set it to `nvim` personally.
 - The script defaults to using `~/TODO.md` as the filepath for the created file. You can change this by setting your `TODO_FILEPATH` environment variable.

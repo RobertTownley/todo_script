@@ -22,13 +22,15 @@ def format_date(d: datetime) -> str:
     return d.strftime(DATE_FORMAT)
 
 
-def get_existing_contents() -> str:
+def get_existing_contents(remove_header=False) -> str:
     if not os.path.isfile(FILEPATH):
         return ""
 
     with open(FILEPATH) as f:
-        data = f.read()
-    return data
+        contents = f.read()
+    if remove_header:
+        contents = "\n".join(contents.split("\n")[1:])
+    return contents
 
 
 def get_new_week_header_row() -> str:
@@ -54,8 +56,9 @@ def needs_new_week(contents: str) -> bool:
     first_row = contents.split("\n")[0]
     return first_row.strip() != header
 
-def resolve_items(contents: str):
+def resolve_previous_weeks_items():
     """Move items without a marking to the top of the week for resolution"""
+    contents = get_existing_contents()
     unresolved_items = []
 
     # Get existing unresolved items
@@ -91,13 +94,59 @@ def resolve_items(contents: str):
     with open(FILEPATH, "w+") as f:
         f.write(contents)
 
+def add_line_to_today(line):
+    contents = get_existing_contents(remove_header=True)
+    today = format_date(datetime.now())
+    for index, current_line in enumerate(contents.split("\n")):
+        if today in current_line:
+            lines = contents.split("\n")
+            lines.insert(index + 2, line)
+            contents = "\n".join(lines)
+            save_contents(contents)
 
-def get_opening_line_number(contents: str):
+def mark_line(line: str, symbol: str):
+    lines = get_existing_contents().split("\n")
+    for index, current_line in enumerate(lines):
+        if line == current_line:
+            lines[index] = line.replace("[ ]", f"[{symbol}]")
+            break
+    contents = "\n".join(lines)
+    save_contents(contents)
+
+
+def resolve_this_week_items():
+    # Remove header from contents in case today appears in header
+    contents = get_existing_contents(remove_header=True)
+
+    this_week = contents.split(END_OF_WEEK_MARKER)[0]
+    today = format_date(datetime.now())
+    before_today = this_week.split(today)[0]
+
+    # Move outstanding items to today
+    for line in before_today.split("\n"):
+        if "- [ ] " in line:
+            print(line)
+            add_line_to_today(line)
+            mark_line(line, "->")
+
+
+def get_opening_line_number():
+    contents = get_existing_contents()
     formatted = format_date(datetime.now())
     for index, line in enumerate(contents.split("\n")):
         if formatted in line:
             return index + 3
     return 0
+
+def save_contents(contents: str):
+    header = get_new_week_header_row()
+    if header not in contents:
+        # Add back header, in case `get_existing_contents` was called with
+        # remove_header=True
+        contents = header + "\n" + contents
+    with open(FILEPATH, "w+") as f:
+        f.write(contents)
+
 
 if __name__ == "__main__":
     # Change file contents as needed
@@ -108,12 +157,12 @@ if __name__ == "__main__":
         contents += "\n\n"
         contents += get_new_day_rows()
         contents += existing_contents
-        with open(FILEPATH, "w+") as f:
-            f.write(contents)
+        save_contents(contents)
 
-    resolve_items(contents)
+    resolve_previous_weeks_items()
+    resolve_this_week_items()
 
     # Open Editor
-    EDITOR = os.environ.get('EDITOR','nvim')
-    line_number = get_opening_line_number(contents)
+    EDITOR = os.environ.get('TODO_EDITOR','vim')
+    line_number = get_opening_line_number()
     call([EDITOR, f"+{line_number}", FILEPATH])
