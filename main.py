@@ -52,9 +52,8 @@ def get_new_day_rows() -> str:
 
 
 def needs_new_week(contents: str) -> bool:
-    header = get_new_week_header_row()
     first_row = contents.split("\n")[0]
-    return first_row.strip() != header
+    return first_row.strip() != get_new_week_header_row()
 
 def resolve_previous_weeks_items():
     """Move items without a marking to the top of the week for resolution"""
@@ -131,11 +130,11 @@ def resolve_this_week_items():
 
 
 def get_opening_line_number():
-    contents = get_existing_contents()
+    contents = get_existing_contents(remove_header=True)
     formatted = format_date(datetime.now())
     for index, line in enumerate(contents.split("\n")):
         if formatted in line:
-            return index + 3
+            return index + 4
     return 0
 
 def save_contents(contents: str):
