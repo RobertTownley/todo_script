@@ -35,13 +35,13 @@ def get_existing_contents(remove_header=False) -> str:
 
 def get_new_week_header_row() -> str:
     now = datetime.now()
-    monday = datetime.now() - timedelta(days=now.weekday())
+    monday = datetime.now() + timedelta(days=now.weekday())
     friday = monday + timedelta(days=4)
     return f"# Week of {format_date(monday)} -> {format_date(friday)}"
 
 def get_new_day_rows() -> str:
     now = datetime.now()
-    start = datetime.now() - timedelta(days=now.weekday())
+    start = datetime.now() + timedelta(days=now.weekday())
     rows = ""
     for i in range(0, 5):
         current = start + timedelta(days=i)
